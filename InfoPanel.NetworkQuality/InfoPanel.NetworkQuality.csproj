@@ -10,10 +10,10 @@
   </PropertyGroup>
 
 
-  <ItemGroup>
-    <Reference Include="InfoPanel.Plugins">
-      <HintPath>lib\InfoPanel.Plugins.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+	<ItemGroup>
+	  <Reference Include="InfoPanel.Plugins">
+		<HintPath>..\lib\InfoPanel.Plugins.dll</HintPath>
+	  </Reference>
+	</ItemGroup>
 
 </Project>
