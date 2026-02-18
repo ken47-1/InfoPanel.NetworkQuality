@@ -35,3 +35,7 @@ Host = 1.1.1.1
 Samples = 10
 TimeoutMs = 1000
 ```
+
+## Notes
+
+This project was developed with human oversight and AI-assisted code generation.
