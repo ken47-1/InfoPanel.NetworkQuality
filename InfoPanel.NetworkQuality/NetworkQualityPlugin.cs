@@ -137,7 +137,7 @@ public class NetworkQualityPlugin : BasePlugin
             "# Window size for ping/jitter averaging",
             $"Samples = {samplesWindow}",
             "",
-            "# EMA Smoothing (0.001 to 1.0). 0.02 is roughly a 100-sample window.",
+            "# EMA Smoothing (0.001 to 1.0)",
             $"Smoothing = {emaSmoothing}",
             "",
             "# Ping timeout in milliseconds",
