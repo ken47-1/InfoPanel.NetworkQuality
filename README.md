@@ -1,11 +1,17 @@
 # InfoPanel.NetworkQuality
 
+*This project was developed with AI-assisted code generation and human oversight.*
+
 ICMP-based network quality plugin for **InfoPanel**.
 
 Reports real-time network health metrics:
 - **Ping** (ms) — average round-trip time
+- **Ping (min)** (ms) — minimum round-trip time
+- **Ping (max)** (ms) — maximum round-trip time
 - **Jitter** (ms) — mean absolute delta between consecutive RTTs
-- **Packet loss** (%) — percentage of timed-out pings
+- **Jitter (min)** (ms) — minimum jitter
+- **Jitter (max)** (ms) — maximum jitter
+- **Packet loss** (%) — percentage of failed pings
 
 Designed to be lightweight, predictable, and suitable for continuous display.
 
@@ -14,6 +20,8 @@ Designed to be lightweight, predictable, and suitable for continuous display.
 - Periodic ICMP echo sampling (1 second interval)
 - Configurable target host and timeout
 - Time‑based sliding window for metric calculation
+- Config hot-reload – edit `.ini` while running, changes apply instantly
+- File logging with auto-rotation
 - Graceful handling of network errors
 - Integrates with InfoPanel's plugin sensor system
 
@@ -45,25 +53,43 @@ TimeoutMs = 1000
 ### Configuration Fields
 
 | Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `Host` | string | `1.1.1.1` | Target IP or hostname to ping |
-| `TimeWindowSec` | int | `30` | Sliding window duration (seconds). Metrics are calculated over samples within this window. Valid range: 5–3600. |
+|------|-------|---------|-------------|
+| `Host` | string | `1.1.1.1` | Target IP or hostname to ping (empty falls back to `1.1.1.1`) |
+| `TimeWindowSec` | int | `30` | Sliding window duration (seconds). Valid range: 5–3600. |
 | `TimeoutMs` | int | `1000` | Per-ping timeout in milliseconds. Valid range: 100–5000. |
+
+### Hot-Reload
+
+Changes to the `.ini` file apply instantly – no need to restart InfoPanel.
 
 ## How Metrics Are Calculated
 
 | Metric | Calculation |
 |--------|-------------|
-| **Ping** | Average RTT of all successful pings in the time window |
+| **Ping** | Average RTT of successful pings in the time window |
+| **Ping (min)** | Minimum RTT in the time window |
+| **Ping (max)** | Maximum RTT in the time window |
 | **Jitter** | Mean absolute difference between consecutive successful RTTs |
-| **Packet Loss** | `(timed_out / total_samples) * 100` |
+| **Jitter (min)** | Minimum absolute difference |
+| **Jitter (max)** | Maximum absolute difference |
+| **Packet Loss** | `(failed / total_samples) * 100` |
+
+## Logging
+
+The plugin logs to:
+
+```
+%localappdata%\InfoPanel.NetworkQuality\log.txt
+```
+
+Includes: config loads, ping errors, config reloads, startup/shutdown events. Auto-rotates at 1MB.
 
 ## Notes
 
-- Only `IPStatus.Success` and `IPStatus.TimedOut` are processed. Other statuses (e.g., TTL expired, destination unreachable) are ignored.
-- Network exceptions are caught and do not add samples for that interval.
+- Any ping status other than `Success` is counted as loss (including timeouts, TTL expired, destination unreachable, and exceptions).
+- Network exceptions are caught and logged.
 - The plugin uses an async update loop with a 1-second interval.
 
-## Credits
+## License
 
-This project was developed with human oversight and AI-assisted code generation.
+MIT
