@@ -4,12 +4,10 @@
 
 InfoPanel.NetworkQuality is a C# plugin for the InfoPanel desktop dashboard application. It monitors network quality using ICMP ping and exposes seven metrics: Ping (ms), Ping Min (ms), Ping Max (ms), Jitter (ms), Jitter Min (ms), Jitter Max (ms), and Packet Loss (%).
 
-- **Language:** C# (.NET 8)
-- **Framework:** InfoPanel.Plugins API
-- **Communication:** ICMP (System.Net.NetworkInformation.Ping)
-- **Metric Window:** Time-based sliding window (default 30 seconds)
-
----
+- Language: C# (.NET 8)
+- Framework: InfoPanel.Plugins API
+- Communication: ICMP (System.Net.NetworkInformation.Ping)
+- Metric Window: Time-based sliding window (default 30 seconds)
 
 ## Architecture Diagram
 
@@ -60,36 +58,31 @@ flowchart TD
     SensorLoss --> Display
 ```
 
----
-
 ## Class Structure
 
-### `NetworkQualityPlugin` : `BasePlugin`
+### NetworkQualityPlugin : BasePlugin
 
 | Member | Type | Description |
 |---|---|---|
-| `_ping` | `PluginSensor?` | Sensor for average Ping (ms) |
-| `_pingMin` | `PluginSensor?` | Sensor for minimum Ping (ms) |
-| `_pingMax` | `PluginSensor?` | Sensor for maximum Ping (ms) |
-| `_jitter` | `PluginSensor?` | Sensor for average Jitter (ms) |
-| `_jitterMin` | `PluginSensor?` | Sensor for minimum Jitter (ms) |
-| `_jitterMax` | `PluginSensor?` | Sensor for maximum Jitter (ms) |
-| `_loss` | `PluginSensor?` | Sensor for Packet Loss (%) |
-| `_pingService` | `IPingService` | Service for sending pings |
-| `_config` | `IConfigManager` | Configuration manager (with hot-reload) |
-| `_calculator` | `IMetricCalculator` | Calculator for metrics |
+| −_ping | PluginSensor? | Sensor for average Ping (ms) |
+| _pingMin | PluginSensor? | Sensor for minimum Ping (ms) |
+| _pingMax | PluginSensor? | Sensor for maximum Ping (ms) |
+| _jitter | PluginSensor? | Sensor for average Jitter (ms) |
+| _jitterMin | PluginSensor? | Sensor for minimum Jitter (ms) |
+| _jitterMax | PluginSensor? | Sensor for maximum Jitter (ms) |
+| _loss | PluginSensor? | Sensor for Packet Loss (%) |
+| _pingService | IPingService | Service for sending pings |
+| _config | IConfigManager | Configuration manager with hot-reload |
+| _calculator | IMetricCalculator | Calculator for metrics |
 
-### `Sample` (Record)
+### Sample (Record)
 
 | Field | Type | Description |
 |---|---|---|
-| `Timestamp` | `DateTime` | UTC timestamp of the sample |
-| `Rtt` | `float?` | Round-trip time in ms, or `null` for loss |
-
----
+| Timestamp | DateTime | UTC timestamp of the sample |
+| Rtt | float? | Round-trip time in ms, or null for loss |
 
 ## Lifecycle
-
 ```mermaid
 flowchart TD
     Init[Initialize] --> Ensure[ConfigManager.EnsureConfigExists]
@@ -97,24 +90,22 @@ flowchart TD
     LoadCfg --> StartWatch[ConfigManager.StartWatching]
     StartWatch --> Clear[Calculator.Clear]
 
-    Load[Load] --> Create["Create PluginContainer"]
-    Create --> AddSensors["Add 7 sensors"]
-    AddSensors --> AddToHost["Add container to InfoPanel"]
+    Load[Load] --> Create[Create PluginContainer]
+    Create --> AddSensors[Add 7 sensors]
+    AddSensors --> AddToHost[Add container to InfoPanel]
 
-    UpdateAsync["UpdateAsync called every 1s"] --> SendPing["IPingService.SendPingAsync"]
+    UpdateAsync[UpdateAsync called every 1s] --> SendPing[IPingService.SendPingAsync]
     SendPing --> AddSample[Calculator.AddSample]
     AddSample --> Compute[Calculator.Compute]
-    Compute --> UpdateSensors["Update all 7 PluginSensor values"]
+    Compute --> UpdateSensors[Update all 7 PluginSensor values]
 
-    ConfigChanged["Config file changed"] --> Debounce["300ms debounce"]
+    ConfigChanged[Config file changed] --> Debounce[300ms debounce]
     Debounce --> Reload[ConfigManager.Load]
-    Reload --> ResetCalc["Calculator reset with new window size"]
+    Reload --> ResetCalc[Calculator reset with new window size]
 
     Close[Close] --> StopWatch[ConfigManager.StopWatching]
     StopWatch --> ClearQueue[Calculator.Clear]
 ```
-
----
 
 ## Metric Calculations
 
@@ -126,7 +117,7 @@ Ping Min = minimum RTT in the window
 Ping Max = maximum RTT in the window
 ```
 
-If no valid samples: `Ping = Ping Min = Ping Max = 0`
+If no valid samples: Ping = Ping Min = Ping Max = 0
 
 ### Jitter (Mean, Min, Max)
 
@@ -136,7 +127,7 @@ Jitter Min = minimum absolute delta
 Jitter Max = maximum absolute delta
 ```
 
-If fewer than 2 valid samples: `Jitter = Jitter Min = Jitter Max = 0`
+If fewer than 2 valid samples: Jitter = Jitter Min = Jitter Max = 0
 
 ### Packet Loss
 
@@ -144,9 +135,7 @@ If fewer than 2 valid samples: `Jitter = Jitter Min = Jitter Max = 0`
 PacketLoss = (timeout_count / total_samples) * 100
 ```
 
-If no samples: `PacketLoss = 0`
-
----
+If no samples: PacketLoss = 0
 
 ## Configuration
 
@@ -174,85 +163,73 @@ TimeoutMs = 1000
 
 ### Configuration Loading
 
-1. `Initialize()` calls `ConfigManager.EnsureConfigExists()` - creates config if missing
-2. `ConfigManager.Load()` reads and parses the `.ini` file
-3. Values are **clamped** to safe ranges:
+1. Initialize() calls ConfigManager.EnsureConfigExists(). This creates config if missing.
+2. ConfigManager.Load() reads and parses the .ini file.
+3. Values are clamped to safe ranges:
 
-- `TimeWindowSec`: 5-3600 (5 seconds to 1 hour)
-- `TimeoutMs`: 100-5000 (100ms to 5 seconds)
-4. **Hot-reload:** `FileSystemWatcher` with 300ms debounce applies changes instantly
+- TimeWindowSec: 5-3600 (5 seconds to 1 hour)
+- TimeoutMs: 100-5000 (100 ms to 5 seconds)
+4. Hot-reload: FileSystemWatcher with 300 ms debounce applies changes instantly.
 
 ### Empty Host Fallback
 
-If `Host = ` is empty or whitespace, it falls back to `1.1.1.1`.
-
----
+If Host is empty or whitespace, it falls back to 1.1.1.1.
 
 ## Threading Model
 
 | Component | Thread | Notes |
 |---|---|---|
-| `Initialize()` | Main/UI thread | Called once at plugin load |
-| `Load()` | Main/UI thread | Called once at plugin load |
-| `UpdateAsync()` | Background thread | Called every 1 second via `Task.Run` |
-| `MetricCalculator` | Shared | Thread-safe with locking |
-| `ConfigManager` | Shared | FileSystemWatcher events on thread pool |
+| Initialize() | Main/UI thread | Called once at plugin load |
+| Load() | Main/UI thread | Called once at plugin load |
+| UpdateAsync() | Background thread | Called every 1 second via Task.Run |
+| MetricCalculator | Shared | Thread-safe with locking |
+| ConfigManager | Shared | FileSystemWatcher events on thread pool |
 
-**Note:** The plugin uses `ConfigureAwait(false)` in `UpdateAsync` to avoid capturing the synchronization context.
-
----
+The plugin uses ConfigureAwait(false) in UpdateAsync to avoid capturing the synchronization context.
 
 ## Logging
 
-- Logs to `%localappdata%\InfoPanel.NetworkQuality\log.txt`
-- Includes: config loads, ping errors, config reloads, startup/shutdown
-- Auto-rotates at 1MB (keeps `.old.txt` backup)
-
----
+- Logs to %localappdata%\InfoPanel.NetworkQuality\log.txt
+- Includes config loads, ping errors, config reloads, startup, and shutdown events
+- Auto-rotates at 1 MB (keeps .old.txt backup)
 
 ## Dependencies
 
 | Dependency | Version | Purpose |
 |---|---|---|
-| `InfoPanel.Plugins` | (referenced as .dll) | InfoPanel plugin API |
-| `System.Net.NetworkInformation` | .NET 8 | ICMP ping |
-| `System.Reflection` | .NET 8 | Assembly location for config path |
-| `System.Collections.Generic` | .NET 8 | Queue<T> |
+| −InfoPanel.Plugins | (referenced as .dll) | InfoPanel plugin API |
+| System.Net.NetworkInformation | .NET 8 | ICMP ping |
+| System.Reflection | .NET 8 | Assembly location for config path |
+| System.Collections.Generic | .NET 8 | Queue<T> |
 
-**External dependencies:** None beyond the .NET 8 standard library and the InfoPanel.Plugins reference.
-
----
+External dependencies: None beyond the .NET 8 standard library and the InfoPanel.Plugins reference.
 
 ## Performance Characteristics
 
 | Metric | Value |
 |---|---|
 | Update interval | 1 second |
-| Ping timeout | Default 1000ms |
+| Ping timeout | Default 1000 ms |
 | Window size | Default 30 samples |
-| Memory usage | ~30 `Sample` objects (negligible) |
+| Memory usage | Approximately 30 Sample objects (negligible) |
 | CPU usage | Minimal (async ping with ConfigureAwait) |
-
----
 
 ## Error Handling
 
 | Scenario | Behavior |
 |---|---|
-| Ping returns `IPStatus.Success` | Store RTT |
-| Ping returns any other status | Store `null` (counts as loss) |
-| Ping throws exception | Store `null` (counts as loss) |
+| Ping returns IPStatus.Success | Store RTT |
+| Ping returns any other status | Store null (counts as loss) |
+| Ping throws exception | Store null (counts as loss) |
 | Config file missing | Auto-generated with defaults |
 | Config parse error | Continue with current values, log error |
-| Empty host in config | Falls back to `1.1.1.1` |
-
----
+| Empty host in config | Falls back to 1.1.1.1 |
 
 ## Design Principles
 
 ### Time-Based Sliding Window
 
-- Configurable duration (default 30s)
+- Configurable duration (default 30 s)
 - Samples automatically evicted when older than window
 - Provides consistent behavior regardless of network latency
 
@@ -264,18 +241,16 @@ If `Host = ` is empty or whitespace, it falls back to `1.1.1.1`.
 
 ### Thread Safety
 
-- `lock` protects queue operations in `MetricCalculator`
-- `lock` protects config reload in `ConfigManager`
+- lock protects queue operations in MetricCalculator
+- lock protects config reload in ConfigManager
 
 ### Separation of Concerns
 
-- `NetworkQualityPlugin`: Orchestration only
-- `IPingService`: Ping logic
-- `IMetricCalculator`: Sliding window + calculations
-- `IConfigManager`: INI loading + hot-reload
-- `Logger`: File logging
-
----
+- NetworkQualityPlugin: Orchestration only
+- IPingService: Ping logic
+- IMetricCalculator: Sliding window and calculations
+- IConfigManager: INI loading and hot-reload
+- Logger: File logging
 
 ## Project Structure
 
@@ -304,8 +279,6 @@ InfoPanel.NetworkQuality/
 └── README.md
 ```
 
----
-
 ## Current Status
 
 - ICMP ping sampling working
@@ -318,9 +291,7 @@ InfoPanel.NetworkQuality/
 - Async update loop
 - Graceful error handling
 
-**Ready for release.**
-
----
+Ready for release.
 
 ## Known Limitations
 
@@ -330,3 +301,4 @@ InfoPanel.NetworkQuality/
 | Single target host | Cannot monitor multiple hosts |
 | No retry on failure | Failed pings are counted as loss |
 | No persistence | Samples reset on plugin reload |
+
